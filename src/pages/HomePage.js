@@ -37,6 +37,7 @@ const HomePage = () => {
     setOpenQueryEditor(false);
   };
   return (
+    <Box display="flex" flexDirection="column">
     <Box display="flex">
     <Box display="flex"  width="1100px" height="280px" justifyContent="center" alignItems="center">
       <img src={R} alt="" height="185px"  style={{
@@ -51,46 +52,55 @@ const HomePage = () => {
       }}>ule Engine</Typography>
       </Box>
     </Box>
-    <Box marginTop="100px" height="180px" display="flex" flexDirection="column" justifyContent="space-between">
-    <Button onClick={handleOpenQueryEditor} variant='contained' sx={{
-        backgroundColor:"#E0115F",
-        width:"350px",
+    <Box marginTop="100px" height="180px" display="flex" flexDirection="column" justifyContent="space-between" alignItems="center">
+    <Button onClick={handleOpenQueryEditor} color='primary' variant='contained' sx={{
+        backgroundColor:"#33c0cb",
+        width:"300px",
         zIndex:"10",
         "&:hover":{
-          backgroundColor:"white",
-          color:"#E0115F",
-          boxShadow: "0px 0px 10px 5px #E0115F"
+          backgroundColor:"#186a70",
         }
       }}>
         <Typography fontWeight="550">Query Editor</Typography>
       </Button>
-      <Dialog maxWidth="1500px" open={openQueryEditor} onClose={handleCloseQueryEditor}>
+      <Dialog maxWidth="100px"
+        sx={{
+          '& .MuiPaper-root': {
+            borderRadius: '10px',
+            background: 'linear-gradient(to right, #07090c, #12161b, #1b2125, #242a33)',
+            border: "1px solid #33c0cb" ,
+          },
+        }} open={openQueryEditor} onClose={handleCloseQueryEditor}>
       <QueryEditor handleClose={handleCloseQueryEditor} /> 
       </Dialog>
       <Button onClick={handleOpenDragAndDropEditor} variant='contained' sx={{
-        backgroundColor:"#DC143C",
-        width:"350px",
-        zIndex:"10",
+        backgroundColor:"#33c0cb",
+        width:"300px",
+        // zIndex:"10",
         "&:hover":{
-          backgroundColor:"white",
-          color:"#DC143C",
-          boxShadow: "0px 0px 10px 5px #DC143C"
+          backgroundColor:"#186a70",
         }
       }}>
         <Typography fontWeight="550">Drag and Drop Editor</Typography>
       </Button>
-      <Dialog open={openDragAndDropEditor} onClose={handleCloseDragAndDropEditor}>
+      <Dialog 
+      sx={{
+        '& .MuiPaper-root': {
+          borderRadius: '10px',
+          background: 'linear-gradient(to right, #07090c, #12161b, #1b2125, #242a33)',
+          border: "1px solid #33c0cb" ,
+        },
+      }}
+      open={openDragAndDropEditor} onClose={handleCloseDragAndDropEditor} maxWidth="2000px">
         <DragAndDropEditor handleClose={handleCloseDragAndDropEditor} />
       </Dialog>
       
       <Button onClick={handleOpenFlowchartEditor} variant='contained' sx={{
-        backgroundColor:"#FF2400",
-        width:"350px",
-        zIndex:"10",
+        backgroundColor:"#33c0cb",
+        width:"300px",
+        // zIndex:"10",
         "&:hover":{
-          backgroundColor:"white",
-          color:"#FF2400",
-          boxShadow: "0px 0px 10px 5px #FF2400"
+          backgroundColor:"#186a70",
         }
       }}>
         <Typography fontWeight="550">Flowchart Editor</Typography>
@@ -99,6 +109,8 @@ const HomePage = () => {
         <FlowchartEditor handleClose={handleCloseFlowchartEditor} />
       </Dialog>
     </Box>
+    </Box>
+    
     </Box>
   )
 }

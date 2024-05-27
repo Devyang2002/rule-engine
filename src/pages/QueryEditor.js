@@ -1,13 +1,12 @@
 import { useState } from 'react';
-import { QueryBuilder, formatQuery, standardClassnames } from 'react-querybuilder';
-import { Box,Button, Typography, Paper } from '@mui/material';
-import '../styles/QueryEditor.css';
+import { QueryBuilderDnD } from '@react-querybuilder/dnd';
+import * as ReactDnD from 'react-dnd';
+import * as ReactDndHtml5Backend from 'react-dnd-html5-backend';
+import { QueryBuilder, formatQuery } from 'react-querybuilder';
+import { Box, Button, Typography, Paper } from '@mui/material';
 import 'react-querybuilder/dist/query-builder.css';
 import 'react-querybuilder/dist/query-builder-layout.css';
-// import 'react-querybuilder/dist/query-builder.scss'; 
-// import 'react-querybuilder/dist/query-builder-layout.scss';
-
-
+import '../styles/QueryEditor.css';
 
 const fields = [
   { name: 'temperature', label: 'Temperature' },
@@ -27,34 +26,104 @@ const QueryEditor = ({ handleClose }) => {
   const handleModalClose = () => {
     handleClose();
   };
-
   
 
   return (
-    <Paper elevation={3} className="query-editor-container">
-      <Typography variant="h5" gutterBottom>
+    <Paper elevation={3} className="query-editor-container" sx={{ minWidth: '500px' }}>
+      <Typography variant="h5" color="white" gutterBottom>
         Query Editor
       </Typography>
       <Box sx={{
-          $rqbBackgroundColor: "red !default",
-// $rqb-border-color: "#8081a2 !default",
-// "$rqb-border-style": solid !default;
-// $rqb-border-radius: 0.25rem !default;
+        "& .queryBuilder-dragHandle": {
+          color: "white"
+        },
+        "& .ruleGroup-combinators": {
+          backgroundColor: "#292929",
+          color: "white",
+          borderRadius: "4px",
+          borderColor: "#292929"
+        },
+        "& .ruleGroup-addRule": {
+          backgroundColor: "#292929",
+          color: "white",
+          borderRadius: "4px",
+          borderColor: "#292929"
+        },
+        "& .ruleGroup-addGroup": {
+          backgroundColor: "#292929",
+          color: "white",
+          borderRadius: "4px",
+          borderColor: "#292929"
+        },
+        "& .ruleGroup-lock": {
+          backgroundColor: "#292929",
+          color: "white",
+          borderRadius: "4px",
+          borderColor: "#292929"
+        },
+        "& .rule-fields": {
+          backgroundColor: "#292929",
+          color: "white",
+          borderRadius: "4px",
+          borderColor: "#292929"
+        },
+        "& .rule-operators": {
+          backgroundColor: "#292929",
+          color: "white",
+          borderRadius: "4px",
+          borderColor: "#292929"
+        },
+        "& .rule-value": {
+          backgroundColor: "#292929",
+          color: "white",
+          borderRadius: "4px",
+          borderColor: "#292929"
+        },
+        "& .rule-remove": {
+          backgroundColor: "#292929",
+          color: "white",
+          borderRadius: "4px",
+          borderColor: "#292929"
+        },
+        "& .rule-lock": {
+          backgroundColor: "#292929",
+          color: "white",
+          borderRadius: "4px",
+          borderColor: "#292929"
+        },
+        "& .ruleGroup-remove": {
+          backgroundColor: "#292929",
+          color: "white",
+          borderRadius: "4px",
+          borderColor: "#292929"
+        }
       }}>
-      <QueryBuilder
-        fields={fields}
-        query={query}
-        onQueryChange={handleQueryChange}
-        controlClassnames={{ queryBuilder: 'queryBuilder-branches' }}
-      />
+        <QueryBuilderDnD dnd={{ ...ReactDnD, ...ReactDndHtml5Backend }}>
+          <QueryBuilder
+            fields={fields}
+            query={query}
+            onQueryChange={handleQueryChange}
+            showLockButtons
+            controlClassnames={{ queryBuilder: 'queryBuilder-branches' }}
+          />
+        </QueryBuilderDnD>
       </Box>
-      <Typography variant="h6" gutterBottom>
+      <Typography variant="h6" color="white" gutterBottom>
         Query
       </Typography>
       <pre className="preformatted-query">{formatQuery(query, 'json')}</pre>
-      <Button variant="contained" onClick={handleModalClose} color="primary">
-        Close
-      </Button>
+      <Box display="flex" justifyContent="flex-end">
+        <Button variant="contained" onClick={handleModalClose} color="primary" sx={{
+          backgroundColor: "#33c0cb",
+          display: "flex",
+          justifyContent: "flex-end",
+          "&:hover": {
+            backgroundColor: "#186a70",
+          }
+        }}>
+          Close
+        </Button>
+      </Box>
     </Paper>
   );
 };

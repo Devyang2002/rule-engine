@@ -1,10 +1,8 @@
 import gsap from "gsap";
 
-// Declare a general timeline to use in all the animation functions.
 
 const tl = gsap.timeline();
 
-// Preloader Animation
 export const preLoaderAnim = () => {
   tl.to("body", {
     duration: 0.1,
