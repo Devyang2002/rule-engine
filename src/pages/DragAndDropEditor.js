@@ -3,24 +3,33 @@ import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { Box, Button, Typography, Paper, TextField, MenuItem, Select, FormControl, InputLabel, IconButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import '../styles/QueryEditor.css';
 
 const ItemTypes = {
   FIELD: 'field',
 };
 
 const fields = [
-  { name: 'temperature', label: 'Temperature' },
-  { name: 'humidity', label: 'Humidity' },
+  {  name: 'temperature', label: 'Temperature'},
+  {  name: 'level', label: 'Level (%)'},
+  { name: 'switch_state', label: 'Switch State'},
+  { name: 'switch_voltage', label: 'Switch Voltage (V)' },
+  { name: 'switch_current', label: 'Switch Current (A)'},
+  {name: 'battery_soc', label: 'Battery SOC (%)'},
+  {name: 'battery_voltage', label: 'Battery Voltage (V)'},
+  { name: 'battery_current_ch1', label: 'Battery Current Ch 1 (A)'},
+  {name: 'battery_current_ch2', label: 'Battery Current Ch 2 (A)'},
+  { name: 'battery_channel_count', label: 'Battery Channel Count'},
+  {name: 'ambiente_state', label: 'Ambiente State'},
+  {name: 'ambiente_rgb', label: 'Ambiente RGB'},
+  {name: 'ambiente_white', label: 'Ambiente White'},
+  {name: 'ambiente_brightness', label: 'Ambiente Brightness (%)'}
 ];
 
 const operators = [
-  { value: '=', label: '=' },
-  { value: '!=', label: '!=' },
-  { value: '<', label: '<' },
-  { value: '>', label: '>' },
-  { value: 'between', label: 'between' },
-  { value: 'not between', label: 'not between' },
+  { value: 'under', label: 'under' },
+    { value:'over', label:'over'},
+    { value:'in range', label:'in range'},
+    { value:'out of range', label:'out of range'},
 ];
 
 const Field = ({ name, label }) => {
@@ -30,7 +39,8 @@ const Field = ({ name, label }) => {
   });
 
   return (
-    <Box ref={ref} sx={{ padding: '8px', backgroundColor: '#292929', color: 'white', borderRadius: '4px', marginBottom: '8px' }}>
+    <Box ref={ref} sx={{ width:"150px",padding: '8px', backgroundColor: '#292929', color: 'white', borderRadius: '4px', marginBottom: '8px',
+     }}>
       {label}
     </Box>
   );
@@ -98,7 +108,7 @@ const DroppedField = ({ field, index, updateField, removeField }) => {
           ))}
         </Select>
       </FormControl>
-      {(field.operator === 'between' || field.operator === 'not between') ? (
+      {(field.operator === 'in range' || field.operator === 'out of range') ? (
         <>
           <TextField
             variant="filled"
@@ -233,17 +243,17 @@ const DragAndDropEditor = ({ handleClose }) => {
   return (
     <DndProvider backend={HTML5Backend}>
       <Paper elevation={3} className="query-editor-container" sx={{
-        minWidth:"500px",
+        maxWidth:"1000px",
       }}>
         <Typography variant="h5" color="white" gutterBottom>
           Drag and Drop Editor
         </Typography>
-        <Box>
+        <Box sx={{ display:"flex" , flexWrap:"wrap", gap:"8px"}}>
           {fields.map((field) => (
             <Field key={field.name} name={field.name} label={field.label} />
           ))}
         </Box>
-        <DropZone onDrop={handleDrop} droppedFields={droppedFields} updateField={updateField} removeField={removeField} />
+        <DropZone onDrop={handleDrop} droppedFields={droppedFields} updateField={updateField} removeField={removeField}/>
         <Typography variant="h6" color="white" gutterBottom>
           Dropped Fields
         </Typography>

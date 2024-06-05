@@ -91,7 +91,7 @@ const HomePage = () => {
           border: "1px solid #33c0cb" ,
         },
       }}
-      open={openDragAndDropEditor} onClose={handleCloseDragAndDropEditor} maxWidth="2000px">
+      open={openDragAndDropEditor} onClose={handleCloseDragAndDropEditor} maxWidth="1300px">
         <DragAndDropEditor handleClose={handleCloseDragAndDropEditor} />
       </Dialog>
       
@@ -105,9 +105,22 @@ const HomePage = () => {
       }}>
         <Typography fontWeight="550">Flowchart Editor</Typography>
       </Button>
-      <Dialog  open={openFlowchartEditor} onClose={handleCloseFlowchartEditor}>
-        <FlowchartEditor handleClose={handleCloseFlowchartEditor} />
-      </Dialog>
+      <Dialog
+            maxWidth="lg"
+            sx={{
+              '& .MuiPaper-root': {
+                borderRadius: '10px',
+                background: 'linear-gradient(to right, #07090c, #12161b, #1b2125, #242a33)',
+                border: '1px solid #33c0cb',
+              },
+            }}
+            open={openFlowchartEditor}
+            onClose={handleCloseFlowchartEditor}
+          >
+            <Box padding="20px" width="1000px" height="500px">
+              <FlowchartEditor handleClose={handleCloseFlowchartEditor} />
+            </Box>
+          </Dialog>
     </Box>
     </Box>
     

@@ -27,6 +27,7 @@
     border-radius: 5px;
     padding: 10px;
     overflow-x: auto;
+    min-height: 50px;
     max-height: 250px;
     overflow-y: auto;
     color: white;
