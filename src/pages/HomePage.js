@@ -70,7 +70,7 @@ const HomePage = () => {
             background: 'linear-gradient(to right, #07090c, #12161b, #1b2125, #242a33)',
             border: "1px solid #33c0cb" ,
           },
-        }} open={openQueryEditor} onClose={handleCloseQueryEditor}>
+        }} open={openQueryEditor} onClose={handleCloseQueryEditor} disableEscapeKeyDown={true}>
       <QueryEditor handleClose={handleCloseQueryEditor} /> 
       </Dialog>
       <Button onClick={handleOpenDragAndDropEditor} variant='contained' sx={{

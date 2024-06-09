@@ -5,11 +5,17 @@ import { Routes, Route } from 'react-router-dom';
 import Navbar from './pages/Navbar';
 import HomePage from './pages/HomePage';
 import PreLoader from './pages/PreLoader';
+import { ToastContainer, toast } from 'react-toastify';
+  import 'react-toastify/dist/ReactToastify.css';
 
 function App() {
   
   return (
     <>
+    <ToastContainer 
+    autoClose={3000}
+    pauseOnHover={true}
+    />
     <div className="app">
     <PreLoader/>
       <main className="content">

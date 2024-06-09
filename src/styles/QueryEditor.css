@@ -6,6 +6,7 @@
     background: linear-gradient(to right, #07090c, #12161b, #1b2125, #242a33);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     border-radius: 10px !important;
+    min-height: 260px;
   }
 
   ::-webkit-scrollbar{

@@ -4,9 +4,11 @@ import * as ReactDnD from 'react-dnd';
 import * as ReactDndHtml5Backend from 'react-dnd-html5-backend';
 import { defaultOperators,QueryBuilder, formatQuery } from 'react-querybuilder';
 import { Box, Button, Typography, Paper,TextField } from '@mui/material';
+import { CircularProgress } from '@material-ui/core';
 import 'react-querybuilder/dist/query-builder.css';
 import 'react-querybuilder/dist/query-builder-layout.css';
 import '../styles/QueryEditor.css';
+import { toast } from 'react-toastify';
 
 const fields = [
 
@@ -226,7 +228,8 @@ const CustomValueEditor = ({ field, operator, value, handleOnChange }) => {
   );
 };
 
-const transformQueryToCustomJSON = (query) => {
+
+const transformQueryToCustomJSON = (query, isAction = false) => {
   const fieldCapIndexMap = fields.reduce((acc, field, index) => {
     acc[field.name] = index;
     return acc;
@@ -236,34 +239,43 @@ const transformQueryToCustomJSON = (query) => {
     if (rule.rules) {
       return {
         combinator: rule.combinator,
-        rules: rule.rules.map(transformRule)
+        [isAction ? 'action' : 'rules']: rule.rules.map(r => transformRule(r, isAction)),
       };
     } else {
-      const field = fields.find(f => f.name === rule.field);
+      const field = fields.find(f => f.name === rule.field) || {};
       return {
         id: rule.id,
-        mac: field.mac,
+        mac: field.mac || '',
         cap_index: fieldCapIndexMap[rule.field] || 0,
         operator: rule.operator,
         value: rule.value,
-        type: field?.type,
-        parameter: field?.parameter || undefined,
-        channel: field?.channel || undefined,
+        type: field.type || '',
+        parameter: field.parameter || '',
+        channel: field.channel || '',
       };
     }
   };
 
-  return query.rules.map(transformRule);
+  return {
+    combinator: query.combinator,
+    [isAction ? 'action' : 'rules']: query.rules.map(r => transformRule(r, isAction)),
+  };
 };
-
 
 const QueryEditor = ({ handleClose }) => {
   const [query, setQuery] = useState({
     combinator: 'and',
     rules: [],
   });
-
+  const [actionQuery, setActionQuery] = useState({
+    combinator: 'and',
+    rules: [],
+  });
   const [formattedQuery, setFormattedQuery] = useState('');
+  const [formattedActionQuery, setFormattedActionQuery] = useState('');
+  const [action, setAction] = useState(false);
+  const [isLoading, setIsLoading]= useState(false);
+
 
   const handleQueryChange = (newQuery) => {
     setQuery(newQuery);
@@ -271,130 +283,339 @@ const QueryEditor = ({ handleClose }) => {
     setFormattedQuery(JSON.stringify(transformedQuery, null, 2));
   };
 
+  const handleActionQueryChange = (newQuery) => {
+    console.log('New Action Query:', newQuery);
+    if (newQuery.rules) {
+      setActionQuery(newQuery);
+      const transformedActionQuery = transformQueryToCustomJSON(newQuery, true);
+      setFormattedActionQuery(JSON.stringify(transformedActionQuery, null, 2));
+    }
+  };
+
+  const handleShowData = () => {
+    if (formattedActionQuery === '') {
+      toast("At least add one action",{
+        style:{
+            backgroundColor:"#07090c",
+            color:"white",
+          }
+      });
+    } else {
+      const hasValidAction = actionQuery.rules.some(rule => {
+        if (Array.isArray(rule.value)) {
+          return rule.value.some(val => val !== '');
+        }
+        return rule.value !== '';
+      });
   
+      if (!hasValidAction) {
+        toast("Please ensure all actions have a value entered",{
+          style:{
+              backgroundColor:"#07090c",
+              color:"white",
+            }
+        });
+      } else {
+        const transformedQuery = transformQueryToCustomJSON(query);
+        const transformedActionQuery = transformQueryToCustomJSON(actionQuery, true);
+        console.log('Rules:', JSON.stringify(transformedQuery, null, 2));
+        console.log('Actions:', JSON.stringify(transformedActionQuery, null, 2));
+        setIsLoading(true);
+        setTimeout(() => {
+          setIsLoading(false);
+          toast("Query Exported Successfully",{
+            style:{
+                backgroundColor:"#07090c",
+                color:"white",
+              }
+          });
+          setAction(false);
+          setFormattedQuery('');
+          setFormattedActionQuery('');
+          setQuery({ id: query.id, combinator: 'and', rules: [] });
+        setActionQuery({ id: actionQuery.id, combinator: 'and', rules: [] });
+        }, 1000);
+      }
+    }
+  };
+  
+
   const handleModalClose = () => {
     handleClose();
   };
-  
-  const handleShowData = () =>{
-    const transformedQuery = transformQueryToCustomJSON(query);
-    console.log(JSON.stringify(transformedQuery, null, 2));
-  }
+
+  const handleToggleAction = () => {
+    if (!query.rules.length) {
+      toast("Please add at least one rule",{
+        style:{
+            backgroundColor:"#07090c",
+            color:"white",
+          }});
+      return;
+    }
+
+    const isValid = query.rules.every(rule => {
+      if (Array.isArray(rule.value)) {
+        return rule.value.some(val => val !== '');
+      }
+      return rule.value !== '';
+    });
+
+    if (!isValid) {
+      toast("Please ensure all rules have a value entered",{
+        style:{
+            backgroundColor:"#07090c",
+            color:"white",
+          }
+      });
+      return;
+    }
+
+    setAction(!action);
+  };
 
   return (
     <Paper elevation={3} className="query-editor-container" sx={{ minWidth: '500px' }}>
-      <Typography variant="h5" color="white" gutterBottom>
-        Query Editor
-      </Typography>
-      <Box sx={{
-        "& .queryBuilder-dragHandle": {
-          color: "white"
-        },
-        "& .ruleGroup-combinators": {
-          backgroundColor: "#292929",
-          color: "white",
-          borderRadius: "4px",
-          borderColor: "#292929"
-        },
-        "& .ruleGroup-addRule": {
-          backgroundColor: "#292929",
-          color: "white",
-          borderRadius: "4px",
-          borderColor: "#292929"
-        },
-        "& .ruleGroup-addGroup": {
-          backgroundColor: "#292929",
-          color: "white",
-          borderRadius: "4px",
-          borderColor: "#292929"
-        },
-        "& .ruleGroup-lock": {
-          backgroundColor: "#292929",
-          color: "white",
-          borderRadius: "4px",
-          borderColor: "#292929"
-        },
-        "& .rule-fields": {
-          backgroundColor: "#292929",
-          color: "white",
-          borderRadius: "4px",
-          borderColor: "#292929"
-        },
-        "& .rule-operators": {
-          backgroundColor: "#292929",
-          color: "white",
-          borderRadius: "4px",
-          borderColor: "#292929"
-        },
-        "& .rule-value": {
-          backgroundColor: "#292929",
-          color: "white",
-          borderRadius: "4px",
-          borderColor: "#292929"
-        },
-        "& .rule-remove": {
-          backgroundColor: "#292929",
-          color: "white",
-          borderRadius: "4px",
-          borderColor: "#292929"
-        },
-        "& .rule-lock": {
-          backgroundColor: "#292929",
-          color: "white",
-          borderRadius: "4px",
-          borderColor: "#292929"
-        },
-        "& .ruleGroup-remove": {
-          backgroundColor: "#292929",
-          color: "white",
-          borderRadius: "4px",
-          borderColor: "#292929"
-        },
-        "& .rule-value-list-item":{
-          backgroundColor: "#292929",
-          color: "white",
-          borderRadius: "4px",
-        },
-      }}>
+      {isLoading ?(
+        <Box height="300px" display="flex" justifyContent="center" alignItems="center">
+        <CircularProgress />
+        </Box>
+      )
+      :( !action ? (
+        <>
+          <Typography variant="h5" color="white" gutterBottom>
+            Query Editor
+          </Typography>
+          <Box sx={{
+            "& .queryBuilder-dragHandle": {
+              color: "white"
+            },
+            "& .ruleGroup-combinators": {
+              backgroundColor: "#292929",
+              color: "white",
+              borderRadius: "4px",
+              borderColor: "#292929"
+            },
+            "& .ruleGroup-addRule": {
+              backgroundColor: "#292929",
+              color: "white",
+              borderRadius: "4px",
+              borderColor: "#292929"
+            },
+            "& .ruleGroup-addGroup": {
+              backgroundColor: "#292929",
+              color: "white",
+              borderRadius: "4px",
+              borderColor: "#292929"
+            },
+            "& .ruleGroup-lock": {
+              backgroundColor: "#292929",
+              color: "white",
+              borderRadius: "4px",
+              borderColor: "#292929"
+            },
+            "& .rule-fields": {
+              backgroundColor: "#292929",
+              color: "white",
+              borderRadius: "4px",
+              borderColor: "#292929"
+            },
+            "& .rule-operators": {
+              backgroundColor: "#292929",
+              color: "white",
+              borderRadius: "4px",
+              borderColor: "#292929"
+            },
+            "& .rule-value": {
+              backgroundColor: "#292929",
+              color: "white",
+              borderRadius: "4px",
+              borderColor: "#292929"
+            },
+            "& .rule-remove": {
+              backgroundColor: "#292929",
+              color: "white",
+              borderRadius: "4px",
+              borderColor: "#292929"
+            },
+            "& .rule-lock": {
+              backgroundColor: "#292929",
+              color: "white",
+              borderRadius: "4px",
+              borderColor: "#292929"
+            },
+            "& .ruleGroup-remove": {
+              backgroundColor: "#292929",
+              color: "white",
+              borderRadius: "4px",
+              borderColor: "#292929"
+            },
+            "& .rule-value-list-item": {
+              backgroundColor: "#292929",
+              color: "white",
+              borderRadius: "4px",
+            },
+          }}>
 
-        <QueryBuilderDnD dnd={{ ...ReactDnD, ...ReactDndHtml5Backend }}>
-          <QueryBuilder
-            fields={fields}
-            query={query}
-            onQueryChange={handleQueryChange}
-            showLockButtons
-            controlElements={{ valueEditor: CustomValueEditor}}
-            controlClassnames={{ queryBuilder: 'queryBuilder-branches' }}
-          />
-        </QueryBuilderDnD>
-      </Box>
-      <Typography variant="h6" color="white" gutterBottom>
-        Query
-      </Typography>
-      <pre className="preformatted-query" >{formattedQuery}</pre>
-      <Box display="flex" justifyContent="flex-end">
-        <Button variant="contained"  color="primary" sx={{
-          backgroundColor: "#33c0cb",
-          display: "flex",
-          marginRight:"10px",
-          justifyContent: "flex-end",
-          "&:hover": {
-            backgroundColor: "#186a70",
-          }
-        }} onClick={handleShowData}>
-          Export Query
-        </Button>
-        <Button variant="contained" onClick={handleModalClose} color="primary" sx={{
-          backgroundColor: "#33c0cb",
-          display: "flex",
-          justifyContent: "flex-end",
-          "&:hover": {
-            backgroundColor: "#186a70",
-          }
-        }}>
-          Close
-        </Button>
-      </Box>
+            <QueryBuilderDnD dnd={{ ...ReactDnD, ...ReactDndHtml5Backend }}>
+              <QueryBuilder
+                fields={fields}
+                query={query}
+                onQueryChange={handleQueryChange}
+                showLockButtons
+                controlElements={{ valueEditor: CustomValueEditor }}
+                controlClassnames={{ queryBuilder: 'queryBuilder-branches' }}
+              />
+            </QueryBuilderDnD>
+          </Box>
+          <Typography variant="h6" color="white" gutterBottom>
+            Query
+          </Typography>
+          <pre className="preformatted-query">{formattedQuery}</pre>
+          <Box display="flex" justifyContent="flex-end">
+            <Button variant="contained" color="primary" sx={{
+              backgroundColor: "#33c0cb",
+              display: "flex",
+              marginRight: "10px",
+              justifyContent: "flex-end",
+              "&:hover": {
+                backgroundColor: "#186a70",
+              }
+            }} onClick={handleToggleAction}>
+              + Action
+            </Button>
+            <Button variant="contained" onClick={handleModalClose} color="primary" sx={{
+              backgroundColor: "#33c0cb",
+              display: "flex",
+              justifyContent: "flex-end",
+              "&:hover": {
+                backgroundColor: "#186a70",
+              }
+            }}>
+              Close
+            </Button>
+          </Box>
+        </>
+      ) : (
+        <>
+          <Typography variant="h5" color="white" gutterBottom>
+            Add Action
+          </Typography>
+          <Box sx={{
+            "& .queryBuilder-dragHandle": {
+              color: "white"
+            },
+            "& .ruleGroup-combinators": {
+              backgroundColor: "#292929",
+              color: "white",
+              borderRadius: "4px",
+              borderColor: "#292929"
+            },
+            "& .ruleGroup-addRule": {
+              backgroundColor: "#292929",
+              color: "white",
+              borderRadius: "4px",
+              borderColor: "#292929"
+            },
+            "& .ruleGroup-addGroup": {
+              backgroundColor: "#292929",
+              color: "white",
+              borderRadius: "4px",
+              borderColor: "#292929"
+            },
+            "& .ruleGroup-lock": {
+              backgroundColor: "#292929",
+              color: "white",
+              borderRadius: "4px",
+              borderColor: "#292929"
+            },
+            "& .rule-fields": {
+              backgroundColor: "#292929",
+              color: "white",
+              borderRadius: "4px",
+              borderColor: "#292929"
+            },
+            "& .rule-operators": {
+              backgroundColor: "#292929",
+              color: "white",
+              borderRadius: "4px",
+              borderColor: "#292929"
+            },
+            "& .rule-value": {
+              backgroundColor: "#292929",
+              color: "white",
+              borderRadius: "4px",
+              borderColor: "#292929"
+            },
+            "& .rule-remove": {
+              backgroundColor: "#292929",
+              color: "white",
+              borderRadius: "4px",
+              borderColor: "#292929"
+            },
+            "& .rule-lock": {
+              backgroundColor: "#292929",
+              color: "white",
+              borderRadius: "4px",
+              borderColor: "#292929"
+            },
+            "& .ruleGroup-remove": {
+              backgroundColor: "#292929",
+              color: "white",
+              borderRadius: "4px",
+              borderColor: "#292929"
+            },
+            "& .rule-value-list-item": {
+              backgroundColor: "#292929",
+              color: "white",
+              borderRadius: "4px",
+            },
+          }}>
+            <QueryBuilderDnD dnd={{ ...ReactDnD, ...ReactDndHtml5Backend }}>
+              <QueryBuilder
+                fields={fields}
+                query={actionQuery}
+                onQueryChange={handleActionQueryChange}
+                showLockButtons
+                controlElements={{ valueEditor: CustomValueEditor }}
+                controlClassnames={{ queryBuilder: 'queryBuilder-branches' }}
+                translations={{
+                  addRule: { label: '+ Action' },
+                }}
+              />
+            </QueryBuilderDnD>
+          </Box>
+          <Typography variant="h6" color="white" gutterBottom>
+            Action Query
+          </Typography>
+          <pre className="preformatted-query">{formattedActionQuery}</pre>
+          <Box display="flex" justifyContent="flex-end">
+            <Button variant="contained" color="primary" sx={{
+              backgroundColor: "#33c0cb",
+              display: "flex",
+              marginRight: "10px",
+              justifyContent: "flex-end",
+              "&:hover": {
+                backgroundColor: "#186a70",
+              }
+            }} onClick={handleToggleAction}>
+              Back to Rules
+            </Button>
+            <Button variant="contained" color="primary" sx={{
+              backgroundColor: "#33c0cb",
+              display: "flex",
+              marginRight: "10px",
+              justifyContent: "flex-end",
+              "&:hover": {
+                backgroundColor: "#186a70",
+              }
+            }} onClick={handleShowData}>
+              Export Query
+            </Button>
+          </Box> 
+        </>
+      ))}
+      
     </Paper>
   );
 };
