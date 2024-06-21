@@ -3,6 +3,7 @@ import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { Box, Button, Typography, Paper, TextField, MenuItem, Select, FormControl, InputLabel, IconButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
+import { toast } from 'react-toastify';
 
 const ItemTypes = {
   FIELD: 'field',
@@ -361,9 +362,15 @@ const DropZone = ({ onDrop, droppedFields, updateField, removeField }) => {
 
 const DragAndDropEditor = ({ handleClose }) => {
   const [droppedFields, setDroppedFields] = useState([]);
+  const [droppedFieldsForActions, setDroppedFieldsForActions] = useState([]);
+  const [action, setAction] = useState(false);
 
   const handleDrop = (field) => {
     setDroppedFields((prevFields) => [...prevFields, { ...field, operator: '', values: ['', ''] }]);
+  };
+
+  const handleDropForAction = (field) => {
+    setDroppedFieldsForActions((prevFields) => [...prevFields, { ...field, operator: '', values: ['', ''] }]);
   };
 
   const updateField = (index, updatedField) => {
@@ -372,20 +379,66 @@ const DragAndDropEditor = ({ handleClose }) => {
     setDroppedFields(newFields);
   };
 
+  const updateFieldForAction = (index, updatedField) => {
+    const newFields = [...droppedFieldsForActions];
+    newFields[index] = updatedField;
+    setDroppedFieldsForActions(newFields);
+  };
+
   const removeField = (index) => {
     setDroppedFields((prevFields) => prevFields.filter((_, i) => i !== index));
+  };
+
+  const removeFieldForAction = (index) => {
+    setDroppedFieldsForActions((prevFields) => prevFields.filter((_, i) => i !== index));
   };
 
   const handleModalClose = () => {
     handleClose();
   };
 
+  const handleToggleAction = () =>{
+    if (!droppedFields.length) {
+      toast("Please add at least one rule",{
+        style:{
+            backgroundColor:"#07090c",
+            color:"white",
+          }});
+      return;
+    }
+
+    const isValid = droppedFields.every(field => {
+      if (field.operator === 'in range' || field.operator === 'out of range') {
+        return field.values && field.values[0] !== '' && field.values[1] !== '';
+      } else if (field.name === 'ambiente_rgb') {
+        return field.values && field.values[0] !== '' && field.values[1] !== '' && field.values[2] !== '';
+      } else if (field.name === 'battery_current') {
+        return field.values && field.values[0] !== '' && field.channel !== '';
+      } else {
+        return field.values && field.values[0] !== '';
+      }
+    });
+
+    if (!isValid) {
+      toast("Please ensure all rules have a value entered",{
+        style:{
+            backgroundColor:"#07090c",
+            color:"white",
+          }
+      });
+      return;
+    }
+    setAction(!action);
+  }
+
   return (
     <DndProvider backend={HTML5Backend}>
       <Paper elevation={3} className="query-editor-container" sx={{
         maxWidth:"1000px",
       }}>
-        <Typography variant="h5" color="white" gutterBottom>
+        { !action ? (
+          <>
+          <Typography variant="h5" color="white" gutterBottom>
           Drag and Drop Editor
         </Typography>
         <Box sx={{ display:"flex" , flexWrap:"wrap", gap:"8px"}}>
@@ -400,11 +453,22 @@ const DragAndDropEditor = ({ handleClose }) => {
         <Box>
           {droppedFields.map((field, index) => (
             <Typography key={index} sx={{ backgroundColor: '#292929', color: 'white', borderRadius: '4px', padding: '8px', margin: '4px 0' }}>
-              {field.label} {field.operator} {(field.operator === 'between' || field.operator === 'not between') ? `${field.values[0]} and ${field.values[1]}` : field.values[0]}
+              {field.label} {field.operator} {(field.operator === 'in range' || field.operator === 'out of range') ? `${field.values[0]} and ${field.values[1]}` : field.values[0]} {(field.label === 'Ambiente RGB')  && `${field.values[0]}, ${field.values[1]} and ${field.values[2]}`}
             </Typography>
           ))}
         </Box>
         <Box display="flex" justifyContent="flex-end">
+        <Button variant="contained" color="primary" sx={{
+              backgroundColor: "#33c0cb",
+              display: "flex",
+              marginRight: "10px",
+              justifyContent: "flex-end",
+              "&:hover": {
+                backgroundColor: "#186a70",
+              }
+            }} onClick={handleToggleAction}>
+              + Action
+            </Button>
           <Button variant="contained" onClick={handleModalClose} color="primary" sx={{
             backgroundColor: "#33c0cb",
             display: "flex",
@@ -415,7 +479,53 @@ const DragAndDropEditor = ({ handleClose }) => {
           }}>
             Close
           </Button>
+        </Box></>
+        ) : (
+          <>
+          <Typography variant="h5" color="white" gutterBottom>
+          Add Actions
+        </Typography>
+        <Box sx={{ display:"flex" , flexWrap:"wrap", gap:"8px"}}>
+          {fields.map((field) => (
+            <Field key={field.name} name={field.name} label={field.label} />
+          ))}
         </Box>
+        <DropZone onDrop={handleDropForAction} droppedFields={droppedFieldsForActions} updateField={updateFieldForAction} removeField={removeFieldForAction}/>
+        <Typography variant="h6" color="white" gutterBottom>
+          Dropped Fields
+        </Typography>
+        <Box>
+          {droppedFieldsForActions.map((field, index) => (
+            <Typography key={index} sx={{ backgroundColor: '#292929', color: 'white', borderRadius: '4px', padding: '8px', margin: '4px 0' }}>
+              {field.label} {field.operator} {(field.operator === 'in range' || field.operator === 'out of range') ? `${field.values[0]} and ${field.values[1]}` : field.values[0]} 
+            </Typography>
+          ))}
+        </Box>
+        <Box display="flex" justifyContent="flex-end">
+        <Button variant="contained" color="primary" sx={{
+              backgroundColor: "#33c0cb",
+              display: "flex",
+              marginRight: "10px",
+              justifyContent: "flex-end",
+              "&:hover": {
+                backgroundColor: "#186a70",
+              }
+            }} onClick={handleToggleAction}>
+              Back To rules
+            </Button>
+          <Button variant="contained" onClick={handleModalClose} color="primary" sx={{
+            backgroundColor: "#33c0cb",
+            display: "flex",
+            justifyContent: "flex-end",
+            "&:hover": {
+              backgroundColor: "#186a70",
+            }
+          }}>
+            Export Query
+          </Button>
+        </Box>
+          </>
+        )}
       </Paper>
     </DndProvider>
   );

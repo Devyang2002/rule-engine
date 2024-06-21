@@ -262,7 +262,7 @@ const transformQueryToCustomJSON = (query, isAction = false) => {
   };
 };
 
-const QueryEditor = ({ handleClose }) => {
+const QueryEditor = ({ handleClose , jsonRule}) => {
   const [query, setQuery] = useState({
     combinator: 'and',
     rules: [],
@@ -292,13 +292,13 @@ const QueryEditor = ({ handleClose }) => {
     }
   };
 
-  const handleShowData = () => {
+  const handleSubmitData = async () => {
     if (formattedActionQuery === '') {
-      toast("At least add one action",{
-        style:{
-            backgroundColor:"#07090c",
-            color:"white",
-          }
+      toast("At least add one action", {
+        style: {
+          backgroundColor: "#07090c",
+          color: "white",
+        }
       });
     } else {
       const hasValidAction = actionQuery.rules.some(rule => {
@@ -309,35 +309,71 @@ const QueryEditor = ({ handleClose }) => {
       });
   
       if (!hasValidAction) {
-        toast("Please ensure all actions have a value entered",{
-          style:{
-              backgroundColor:"#07090c",
-              color:"white",
-            }
+        toast("Please ensure all actions have a value entered", {
+          style: {
+            backgroundColor: "#07090c",
+            color: "white",
+          }
         });
       } else {
         const transformedQuery = transformQueryToCustomJSON(query);
         const transformedActionQuery = transformQueryToCustomJSON(actionQuery, true);
-        console.log('Rules:', JSON.stringify(transformedQuery, null, 2));
-        console.log('Actions:', JSON.stringify(transformedActionQuery, null, 2));
+  
+        const combinedQueries = {
+          rules: transformedQuery,
+          actions: transformedActionQuery
+        };
+  
+        console.log('Combined Queries:', JSON.stringify(combinedQueries, null, 2));
+
+        const userId = sessionStorage.getItem('user_id');
+  
         setIsLoading(true);
-        setTimeout(() => {
-          setIsLoading(false);
-          toast("Query Exported Successfully",{
-            style:{
-                backgroundColor:"#07090c",
-                color:"white",
-              }
+        try {
+          const response = await fetch('http://localhost:5000/rules', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              user_id: userId,
+              json_rule: combinedQueries
+            })
           });
-          setAction(false);
-          setFormattedQuery('');
-          setFormattedActionQuery('');
-          setQuery({ id: query.id, combinator: 'and', rules: [] });
-        setActionQuery({ id: actionQuery.id, combinator: 'and', rules: [] });
-        }, 1000);
+  
+          const data = await response.json();
+          console.log('Response:', data);
+  
+          if (response.ok) {
+            setIsLoading(false);
+            toast("Query Exported Successfully", {
+              style: {
+                backgroundColor: "#07090c",
+                color: "white",
+              }
+            });
+            setAction(false);
+            setFormattedQuery('');
+            setFormattedActionQuery('');
+            setQuery({ id: query.id, combinator: 'and', rules: [] });
+            setActionQuery({ id: actionQuery.id, combinator: 'and', rules: [] });
+          } else {
+            throw new Error(data.message || 'Failed to export query');
+          }
+        } catch (error) {
+          console.error('Error exporting query:', error);
+          setIsLoading(false);
+          toast("Failed to export query", {
+            style: {
+              backgroundColor: "#07090c",
+              color: "white",
+            }
+          });
+        }
       }
     }
   };
+  
   
 
   const handleModalClose = () => {
@@ -609,7 +645,7 @@ const QueryEditor = ({ handleClose }) => {
               "&:hover": {
                 backgroundColor: "#186a70",
               }
-            }} onClick={handleShowData}>
+            }} onClick={handleSubmitData}>
               Export Query
             </Button>
           </Box> 
