@@ -2,12 +2,12 @@ import React, { useState, useEffect } from "react";
 import { Box, Button, Dialog, Typography, IconButton,TextField } from "@mui/material";
 import Name from "../assets/evotion.webp";
 import R from "../assets/R.webp";
-import { Link } from "react-router-dom";
 import QueryEditor from "./QueryEditor";
 import DragAndDropEditor from "./DragAndDropEditor";
 import FlowchartEditor from "./FlowchartEditor";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
+import { getUser } from "../sessionStorage/auth";
 
 const HomePage = () => {
   const [openQueryEditor, setOpenQueryEditor] = useState(false);
@@ -21,8 +21,10 @@ const HomePage = () => {
 
 
   const fetchRules = async () => {
+    const user_id = getUser().id;
+    console.log(user_id)
     try {
-      const response = await fetch("http://localhost:5000/rulesperuser");
+      const response = await fetch(`http://localhost:5000/users/${user_id}/rules`);
       if (!response.ok) {
         throw new Error("Network response was not ok");
       }
@@ -34,7 +36,7 @@ const HomePage = () => {
   };
   useEffect(() => {
     fetchRules();
-  }, [rules]);
+  }, []);
 
   const handleOpenDragAndDropEditor = () => {
     setOpenDragAndDropEditor(true);
@@ -62,19 +64,13 @@ const HomePage = () => {
 
   const handleCloseEditDialogOpen = () =>{
     setEditDialogOpen(false);
-    setUpdatedEditor(false);
   }
 
   const handleEditClick = (rule) => {
     setSelectedRule(rule);
     setEditedRuleJson(rule.json_rule);
     setEditDialogOpen(true);
-    // setOpenQueryEditor(true)
     };
-
-    const handleUpdateClick = () =>{
-      setUpdatedEditor(true);
-    }
 
   const handleEditSave = async () => {
     if (selectedRule) {
@@ -201,7 +197,7 @@ const HomePage = () => {
               },
             }}
             open={openQueryEditor}
-            onClose={handleCloseQueryEditor}zs
+            onClose={handleCloseQueryEditor}
             disableEscapeKeyDown={true}
           >
             <QueryEditor handleClose={handleCloseQueryEditor}/>
@@ -326,59 +322,18 @@ const HomePage = () => {
           ))}
             <Dialog
   open={editDialogOpen}
-  onClose={() => setEditDialogOpen(false)}
-  maxWidth="sm"
-  fullWidth
-  sx={{
-    "& .MuiPaper-root": {
-      borderRadius: "10px",
-      background:
-        "linear-gradient(to right, #07090c, #12161b, #1b2125, #242a33)",
-      border: "1px solid #33c0cb",
-    },
-  }}
+  onClose={handleCloseEditDialogOpen}
+  maxWidth="100px"
+            sx={{
+              "& .MuiPaper-root": {
+                borderRadius: "10px",
+                background:
+                  "linear-gradient(to right, #07090c, #12161b, #1b2125, #242a33)",
+                border: "1px solid #33c0cb",
+              },
+            }}
 >
-  <Box padding="20px" display="flex" flexDirection="column">
-    <Typography variant="h6" color="#33c0cb">
-      Edit Rule
-    </Typography>
-    <TextField
-      fullWidth
-      multiline
-      rows={10}
-      variant="outlined"
-      value={editedRuleJson}
-      onChange={(e) => setEditedRuleJson(e.target.value)}
-      sx={{
-        marginTop: "20px",
-        marginBottom: "20px",
-        "& .MuiOutlinedInput-root": {
-          color: "white",
-          "& fieldset": {
-            borderColor: "#33c0cb",
-          },
-          "&:hover fieldset": {
-            borderColor: "#33c0cb",
-          },
-          "&.Mui-focused fieldset": {
-            borderColor: "#33c0cb",
-          },
-        },
-      }}
-    />
-    <Button
-      onClick={handleEditSave}
-      variant="contained"
-      sx={{
-        backgroundColor: "#33c0cb",
-        "&:hover": {
-          backgroundColor: "#186a70",
-        },
-      }}
-    >
-      Save
-    </Button>
-  </Box>
+  <QueryEditor handleClose={handleCloseEditDialogOpen} jsonRule={editedRuleJson} saveQuery={handleEditSave} />
 </Dialog>
         </Box>
       </Box>

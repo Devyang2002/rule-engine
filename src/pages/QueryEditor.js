@@ -34,7 +34,7 @@ const fields = [
 
   { name: 'switch_state', label: 'Switch State',mac:'22:33:44:55:66:77', type: 'switch' ,
   parameter:'state', operators: [
-    { name: '=', label: 'is' },,
+    { name: '=', label: 'is' },
   ],}, 
   { name: 'switch_voltage', label: 'Switch Voltage (V)',mac:'22:33:44:55:66:77', type: 'switch',
   parameter:'voltage', operators: [
@@ -84,6 +84,8 @@ const fields = [
 
 
 const CustomValueEditor = ({ field, operator, value, handleOnChange }) => {
+  console.log(field);
+
   if (operator === 'out of range' || operator === 'in range') {
     return (
       <div style={{ display: 'flex', gap: '8px' }}>
@@ -212,10 +214,10 @@ const CustomValueEditor = ({ field, operator, value, handleOnChange }) => {
     );
   }
 
-
   return (
+
     <input
-      type={field.type === 'number' ? 'number' : 'text'}
+      type="text"
       value={value}
       onChange={(e) => handleOnChange(e.target.value)}
       style={{
@@ -262,14 +264,20 @@ const transformQueryToCustomJSON = (query, isAction = false) => {
   };
 };
 
-const QueryEditor = ({ handleClose , jsonRule}) => {
+const QueryEditor = ({ handleClose , jsonRule, saveQuery}) => {
+  let rulesActionsJson = {};
+  if(jsonRule){
+    rulesActionsJson = JSON.parse(jsonRule);
+  }
+  console.log(rulesActionsJson)
+
   const [query, setQuery] = useState({
     combinator: 'and',
-    rules: [],
+    rules: rulesActionsJson &&  rulesActionsJson.rules && rulesActionsJson.rules.rules ? rulesActionsJson.rules.rules : [],
   });
   const [actionQuery, setActionQuery] = useState({
     combinator: 'and',
-    rules: [],
+    rules: rulesActionsJson &&  rulesActionsJson.actions && rulesActionsJson.actions.action ? rulesActionsJson.actions.action : [],
   });
   const [formattedQuery, setFormattedQuery] = useState('');
   const [formattedActionQuery, setFormattedActionQuery] = useState('');
@@ -374,7 +382,9 @@ const QueryEditor = ({ handleClose , jsonRule}) => {
     }
   };
   
-  
+  const handleSaveQuery = () => {
+      saveQuery();
+  }
 
   const handleModalClose = () => {
     handleClose();
@@ -637,6 +647,18 @@ const QueryEditor = ({ handleClose , jsonRule}) => {
             }} onClick={handleToggleAction}>
               Back to Rules
             </Button>
+            {jsonRule ?
+            <Button variant="contained" color="primary" sx={{
+              backgroundColor: "#33c0cb",
+              display: "flex",
+              marginRight: "10px",
+              justifyContent: "flex-end",
+              "&:hover": {
+                backgroundColor: "#186a70",
+              }
+            }} onClick={handleSaveQuery}>
+              Update Query
+            </Button> : 
             <Button variant="contained" color="primary" sx={{
               backgroundColor: "#33c0cb",
               display: "flex",
@@ -648,6 +670,7 @@ const QueryEditor = ({ handleClose , jsonRule}) => {
             }} onClick={handleSubmitData}>
               Export Query
             </Button>
+            }
           </Box> 
         </>
       ))}
