@@ -289,37 +289,43 @@ const HomePage = () => {
         <Box height="500px" sx={{
           overflowY:"auto"
         }}>
-            {rules.map((rule) => (
-            <Box
-              key={rule.id}
-              marginBottom="10px"
-              padding="10px"
-              border="1px solid #33c0cb"
-              borderRadius="5px"
-              display="flex"
-              flexDirection="column"
-              justifyContent="space-between"
-              alignItems="center"
-            >
-              <Typography color="white">
-                {truncateJsonRule(rule.json_rule)}
-              </Typography>
+            {rules.length === 0 ? (
               <Typography color="gray">
-                Created: {formatDate(rule.created_at)}
-              </Typography>
-              <Typography color="gray">
-                Updated: {formatDate(rule.updated_at)}
-              </Typography>
-              <Box display="flex" justifyContent="space-between" width="100%">
-                <IconButton sx={{ color: "#009688" }} onClick={() => handleEditClick(rule)}>
-                  <EditIcon />
-                </IconButton>
-                <IconButton sx={{ color: "#e53935" }} onClick={() => handleDeleteRule(rule.id)}>
-                  <DeleteIcon />
-                </IconButton>
-              </Box>
-            </Box>
-          ))}
+              You haven't added any rules yet.
+            </Typography>
+            ): (
+              rules.map((rule) => (
+                <Box
+                  key={rule.id}
+                  marginBottom="10px"
+                  padding="10px"
+                  border="1px solid #33c0cb"
+                  borderRadius="5px"
+                  display="flex"
+                  flexDirection="column"
+                  justifyContent="space-between"
+                  alignItems="center"
+                >
+                  <Typography color="white">
+                    {truncateJsonRule(rule.json_rule)}
+                  </Typography>
+                  <Typography color="gray">
+                    Created: {formatDate(rule.created_at)}
+                  </Typography>
+                  <Typography color="gray">
+                    Updated: {formatDate(rule.updated_at)}
+                  </Typography>
+                  <Box display="flex" justifyContent="space-between" width="100%">
+                    <IconButton sx={{ color: "#009688" }} onClick={() => handleEditClick(rule)}>
+                      <EditIcon />
+                    </IconButton>
+                    <IconButton sx={{ color: "#e53935" }} onClick={() => handleDeleteRule(rule.id)}>
+                      <DeleteIcon />
+                    </IconButton>
+                  </Box>
+                </Box>
+              ))
+            )}
             <Dialog
   open={editDialogOpen}
   onClose={handleCloseEditDialogOpen}
