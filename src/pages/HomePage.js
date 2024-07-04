@@ -17,12 +17,12 @@ const HomePage = () => {
   const [selectedRule, setSelectedRule] = useState(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editedRuleJson, setEditedRuleJson] = useState("");
-  const [updatedEditor, setUpdatedEditor] = useState(false)
+  const [updatedEditor, setUpdatedEditor] = useState(false);
+  const [onUpdate, setOnUpdate] = useState(true);
 
 
   const fetchRules = async () => {
     const user_id = getUser().id;
-    console.log(user_id)
     try {
       const response = await fetch(`http://localhost:5000/users/${user_id}/rules`);
       if (!response.ok) {
@@ -35,8 +35,11 @@ const HomePage = () => {
     }
   };
   useEffect(() => {
-    fetchRules();
-  }, []);
+    if (onUpdate) {
+      fetchRules();
+      setOnUpdate(false); // Reset onUpdate to false after fetching rules
+    }
+  }, [onUpdate]);
 
   const handleOpenDragAndDropEditor = () => {
     setOpenDragAndDropEditor(true);
@@ -60,6 +63,7 @@ const HomePage = () => {
 
   const handleCloseQueryEditor = () => {
     setOpenQueryEditor(false);
+    setOnUpdate(true);
   };
 
   const handleCloseEditDialogOpen = () =>{
@@ -72,36 +76,29 @@ const HomePage = () => {
     setEditDialogOpen(true);
     };
 
-  const handleEditSave = async () => {
-    if (selectedRule) {
-      const updatedRule = { ...selectedRule, json_rule: editedRuleJson, updated_at: new Date().toISOString() };
-
+  const handleEditSave = async (editedData) => {
+      await fetchRules();
       try {
         const response = await fetch(`http://localhost:5000/rules/${selectedRule.id}`, {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(updatedRule),
+          body: editedData,
         });
 
         if (!response.ok) {
           throw new Error("Failed to update rule");
         }
-
-        setRules((prevRules) =>
-          prevRules.map((rule) =>
-            rule.id === selectedRule.id ? updatedRule : rule
-          )
-        );
-
         setEditDialogOpen(false);
         setSelectedRule(null);
         setEditedRuleJson("");
+        setEditDialogOpen(false);
+        setOnUpdate(true);
       } catch (error) {
         console.error("Error updating rule:", error);
       }
-    }
+    
   };
 
   const handleDeleteRule = async (ruleId) => {
@@ -121,8 +118,8 @@ const HomePage = () => {
   };
 
   const truncateJsonRule = (jsonRule) => {
-    const words = jsonRule.split(" ");
-    return words.length > 10 ? words.slice(0, 10).join(" ") + "..." : jsonRule;
+    const words = JSON.stringify(jsonRule);
+    return jsonRule;
   };
 
   const formatDate = (dateString) => {

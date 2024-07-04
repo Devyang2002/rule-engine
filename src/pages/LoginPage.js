@@ -42,7 +42,6 @@ const LoginPage = () => {
         }
   
         const user = await response.json();
-        console.log(user);
   
         if (user && user.data) {
           loginUser(user.data);
