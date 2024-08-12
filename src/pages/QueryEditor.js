@@ -48,7 +48,7 @@ const fields = [
     name: "switch_state",
     label: "Switch State",
     mac: "22:33:44:55:66:77",
-    type: "switch",
+    type: "switch_state",
     parameter: "state",
     operators: [{ name: "=", label: "is" }],
   },
@@ -56,7 +56,7 @@ const fields = [
     name: "switch_voltage",
     label: "Switch Voltage (V)",
     mac: "22:33:44:55:66:77",
-    type: "switch",
+    type: "switch_voltage",
     parameter: "voltage",
     operators: [
       { name: "under", label: "under" },
@@ -69,7 +69,7 @@ const fields = [
     name: "switch_current",
     label: "Switch Current (A)",
     mac: "22:33:44:55:66:77",
-    type: "switch",
+    type: "switch_current",
     parameter: "current",
     operators: [
       { name: "under", label: "under" },
@@ -83,7 +83,7 @@ const fields = [
     name: "battery_soc",
     label: "Battery SOC (%)",
     mac: "33:44:55:66:77:88",
-    type: "battery",
+    type: "battery_soc",
     parameter: "soc(state of charge)",
     operators: [
       { name: "under", label: "under" },
@@ -96,7 +96,7 @@ const fields = [
     name: "battery_voltage",
     label: "Battery Voltage (V)",
     mac: "33:44:55:66:77:88",
-    type: "battery",
+    type: "battery_voltage",
     parameter: "voltage",
     operators: [
       { name: "under", label: "under" },
@@ -109,7 +109,7 @@ const fields = [
     name: "battery_current",
     label: "Battery Current(A)",
     mac: "33:44:55:66:77:88",
-    type: "battery",
+    type: "battery_current",
     parameter: "current",
     operators: [
       { name: "under", label: "under" },
@@ -121,7 +121,7 @@ const fields = [
   {
     name: "ambiente_state",
     label: "Ambiente State",
-    type: "ambiente",
+    type: "ambiente_state",
     mac: "44:55:66:77:88:99",
     parameter: "state",
     operators: [{ name: "=", label: "is" }],
@@ -129,7 +129,7 @@ const fields = [
   {
     name: "ambiente_rgb",
     label: "Ambiente RGB",
-    type: "ambiente",
+    type: "ambiente_rgb",
     parameter: "rgb",
     mac: "44:55:66:77:88:99",
     operators: [{ name: "=", label: "is" }],
@@ -137,7 +137,7 @@ const fields = [
   {
     name: "ambiente_white",
     label: "Ambiente White",
-    type: "ambiente",
+    type: "ambiente_white",
     parameter: "white",
     mac: "44:55:66:77:88:99",
     operators: [{ name: "=", label: "is" }],
@@ -145,15 +145,16 @@ const fields = [
   {
     name: "ambiente_brightness",
     label: "Ambiente Brightness (%)",
-    type: "ambiente",
+    type: "ambiente_brightness",
     parameter: "brightness",
     mac: "44:55:66:77:88:99",
     operators: [{ name: "=", label: "is" }],
   },
 ];
 
-const CustomValueEditor = ({ field, operator, value, handleOnChange }) => {
+const CustomValueEditor = ({ field, operator, value, handleOnChange,selectedNode_capability }) => {
 
+  console.log("kjbdfjibf", selectedNode_capability);
   if (operator === "out of range" || operator === "in range") {
     return (
       <div style={{ display: "flex", gap: "8px" }}>
@@ -186,14 +187,20 @@ const CustomValueEditor = ({ field, operator, value, handleOnChange }) => {
   }
 
   if (field === "battery_current") {
+    const initialValue = {
+      current: value?.current || "",
+      channel: value?.channel || selectedNode_capability[0].channel || "",
+    };
+
     return (
       <div style={{ display: "flex", gap: "8px" }}>
         <input
           type="number"
-          value={value?.current || ""}
-          onChange={(e) =>
-            handleOnChange({ ...value, current: e.target.value })
-          }
+          value={initialValue.current}
+          onChange={(e) => {
+            const newValue = { ...value, current: e.target.value };
+            handleOnChange(newValue);
+          }}
           placeholder="Current Value"
           style={{
             backgroundColor: "#292929",
@@ -203,10 +210,11 @@ const CustomValueEditor = ({ field, operator, value, handleOnChange }) => {
           }}
         />
         <select
-          value={value?.channel || ""}
-          onChange={(e) =>
-            handleOnChange({ ...value, channel: e.target.value })
-          }
+          value={initialValue.channel}
+          onChange={(e) => {
+            const newValue = { ...value, channel: e.target.value };
+            handleOnChange(newValue);
+          }}
           style={{
             backgroundColor: "#292929",
             color: "white",
@@ -301,7 +309,9 @@ const CustomValueEditor = ({ field, operator, value, handleOnChange }) => {
   );
 };
 
-const transformQueryToCustomJSON = (query, jsonRule, isAction = false) => {
+
+
+const transformQueryToCustomJSON = (query, jsonRule, isAction = false,selectedNode = null) => {
   const fieldCapIndexMap = fields.reduce((acc, field, index) => {
     acc[field.name] = index;
     return acc;
@@ -326,6 +336,20 @@ const transformQueryToCustomJSON = (query, jsonRule, isAction = false) => {
         console.error(`Field not found for rule field '${rule.field}'`, rule);
         throw new Error(`Field not found for rule field '${rule.field}'`);
       }
+      
+      if(selectedNode && selectedNode.capabilities) {
+        return {
+          id: rule.id,
+          field: selectedNode.capabilities[0].field,
+          cap_index: fieldCapIndexMap[rule.field] || 0,
+          operator: rule.operator,
+          value: rule.value,
+          channel: selectedNode.capabilities.channel  || "",
+          mac: selectedNode.mac || "",
+          name: selectedNode.capabilities[0].name,
+          parameter: field.parameter || "",
+        };
+      }
 
       return {
         id: rule.id,
@@ -333,7 +357,6 @@ const transformQueryToCustomJSON = (query, jsonRule, isAction = false) => {
         cap_index: fieldCapIndexMap[rule.field] || 0,
         operator: rule.operator,
         value: rule.value,
-        type: field.type,
         mac: field.mac || "",
         parameter: field.parameter || "",
         channel: field.channel || "",
@@ -349,18 +372,20 @@ const transformQueryToCustomJSON = (query, jsonRule, isAction = false) => {
   };
 };
 
-const QueryEditor = ({ handleClose, jsonRule, saveQuery }) => {
+const QueryEditor = ({ handleClose, jsonRule, saveQuery,selectedNode }) => {
   let rulesActionsJson = {};
   if (jsonRule) {
     rulesActionsJson = JSON.parse(jsonRule);
   }
+
   const [query, setQuery] = useState({
     combinator: "and",
     rules:
     rulesActionsJson && rulesActionsJson.rules && rulesActionsJson.rules.rules
     ? rulesActionsJson.rules.rules
-    : [],
+    : selectedNode.capabilities,
   });
+
   const [actionQuery, setActionQuery] = useState({
     combinator: "and",
     rules:
@@ -380,7 +405,7 @@ const QueryEditor = ({ handleClose, jsonRule, saveQuery }) => {
 
   const handleQueryChange = (newQuery) => {
     setQuery(newQuery);
-    const transformedQuery = transformQueryToCustomJSON(newQuery, jsonRule);
+    const transformedQuery = transformQueryToCustomJSON(newQuery, jsonRule,false,selectedNode);
     setFormattedQuery(JSON.stringify(transformedQuery, null, 2));
   };
 
@@ -390,7 +415,7 @@ const QueryEditor = ({ handleClose, jsonRule, saveQuery }) => {
       const transformedActionQuery = transformQueryToCustomJSON(
         newQuery,
         jsonRule,
-        true
+        true,
       );
       setFormattedActionQuery(JSON.stringify(transformedActionQuery, null, 2));
     }
@@ -567,6 +592,11 @@ const QueryEditor = ({ handleClose, jsonRule, saveQuery }) => {
     setAction(!action);
   };
 
+  const CustomValueEditorWrapper = (props) => {
+    return <CustomValueEditor {...props} selectedNode_capability={selectedNode.capabilities} />;
+  };
+  
+
   return (
     <Paper
       elevation={3}
@@ -665,7 +695,8 @@ const QueryEditor = ({ handleClose, jsonRule, saveQuery }) => {
                 query={query}
                 onQueryChange={handleQueryChange}
                 showLockButtons
-                controlElements={{ valueEditor: CustomValueEditor }}
+                // controlElements={{ valueEditor: CustomValueEditor }}
+                controlElements={{ valueEditor: CustomValueEditorWrapper }}
                 controlClassnames={{ queryBuilder: "queryBuilder-branches" }}
               />
             </QueryBuilderDnD>

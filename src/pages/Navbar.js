@@ -1,12 +1,8 @@
-import { Box, Typography,Button } from "@mui/material";
-import InputBase from "@mui/material/InputBase";
-import NotificationsOutlinedIcon from "@mui/icons-material/NotificationsOutlined";
-import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
-import SearchIcon from "@mui/icons-material/Search";
-import { Link, Navigate } from "react-router-dom";
+import { Box, Typography,Button, IconButton } from "@mui/material";
 import logo from '../assets/logo.png';
 import { logoutUser } from "../sessionStorage/auth";
 import { toast } from "react-toastify";
+import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
 
 
 export const Navbar = () => {
@@ -25,15 +21,14 @@ export const Navbar = () => {
             }} />
       </Box>
       <Box display="flex"  justifyContent="space-between" marginRight="10px" p={1}>
-        {/* <Link style={{
-            color:"red",
-            textDecoration:"none"
-        }} to="/">Login</Link> */}
-        {/* <Link to="/query">Query Editor</Link>
-        <Link to="/d&d">Drag AND drop editor</Link>
-       <Link to="/flowchart">flowChart Editor</Link> */}
-       <Button onClick={handleLogout}>
-        logout
+       <Button onClick={handleLogout} sx={{
+          marginTop: "-10px"
+       }}>
+        <IconButton sx={{
+          color: "#e53935",
+        }}>
+          <LogoutOutlinedIcon/>
+        </IconButton>
        </Button>
       </Box>
     </Box>

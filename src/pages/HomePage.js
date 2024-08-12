@@ -8,17 +8,22 @@ import FlowchartEditor from "./FlowchartEditor";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { getUser } from "../sessionStorage/auth";
+import mockdata from '../data/mock_data';
+import { ConsoleSqlOutlined } from "@ant-design/icons";
 
 const HomePage = () => {
   const [openQueryEditor, setOpenQueryEditor] = useState(false);
-  const [openDragAndDropEditor, setOpenDragAndDropEditor] = useState(false);
-  const [openFlowchartEditor, setOpenFlowchartEditor] = useState(false);
+  const [openQueryEditorForNodes, setopenQueryEditorForNodes] = useState(false);
+  const [openSelectNodes, setOpenSelectedNodes] = useState(false);
   const [rules, setRules] = useState([]);
   const [selectedRule, setSelectedRule] = useState(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editedRuleJson, setEditedRuleJson] = useState("");
-  const [updatedEditor, setUpdatedEditor] = useState(false);
   const [onUpdate, setOnUpdate] = useState(true);
+  const [mockData, setMockData] = useState(mockdata);
+  const [selectedBrain,setSelectedBrain] = useState(null);
+  const [selectedNodes, setSelectedNodes] = useState([]);
+  const [selectedNode, setSelectedNode] = useState([]);
 
 
   const fetchRules = async () => {
@@ -34,6 +39,7 @@ const HomePage = () => {
       console.error("Error fetching rules:", error);
     }
   };
+
   useEffect(() => {
     if (onUpdate) {
       fetchRules();
@@ -41,28 +47,22 @@ const HomePage = () => {
     }
   }, [onUpdate]);
 
-  const handleOpenDragAndDropEditor = () => {
-    setOpenDragAndDropEditor(true);
-  };
-
-  const handleCloseDragAndDropEditor = () => {
-    setOpenDragAndDropEditor(false);
-  };
-
-  const handleOpenFlowchartEditor = () => {
-    setOpenFlowchartEditor(true);
-  };
-
-  const handleCloseFlowchartEditor = () => {
-    setOpenFlowchartEditor(false);
-  };
-
   const handleOpenQueryEditor = () => {
     setOpenQueryEditor(true);
   };
 
   const handleCloseQueryEditor = () => {
     setOpenQueryEditor(false);
+    setOnUpdate(true);
+  };
+
+  const handleOpenQueryForNodes = (node) => {
+    setSelectedNode(node);
+    setopenQueryEditorForNodes(true);
+  };
+
+  const handleCloseQueryForNodes = () => {
+    setopenQueryEditorForNodes(false);
     setOnUpdate(true);
   };
 
@@ -127,28 +127,45 @@ const HomePage = () => {
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
 
+  const handleSelectednodes = (key) => {
+    setSelectedBrain(key);
+    const selectedBrainData = mockData.find(mock => mock.system.brain.mac === key);
+    if (selectedBrainData) {
+      setSelectedNodes(selectedBrainData.system.brain.nodes);
+    } else {
+      setSelectedNodes([]);
+    }
+    setOpenSelectedNodes(true);
+  };
+  
+
+  const handleCloseSelectedNodes = () =>{
+    setOpenSelectedNodes(false);
+  }
+
   return (
     <Box display="flex">
-      <Box display="flex" flexDirection="column">
+      <Box>
+      <Box display="flex">
         <Box
+        marginLeft="60px"
           display="flex"
-          width="800px"
           justifyContent="center"
-          alignItems="center"
+          width="740px"
         >
           <img
             src={R}
             alt=""
-            height="140px"
+            height="70px"
             style={{
-              marginTop: "55px",
+              marginTop: "40px",
               marginRight: "15px",
             }}
           />
-          <Box marginTop="85px">
-            <img src={Name} alt="" width="500px" height="50px" />
+          <Box marginTop="50px" >
+            <img src={Name} alt="" width="300px" height="25px" />
             <Typography
-              fontSize="70px"
+              fontSize="25px"
               fontWeight="670"
               style={{
                 display: "flex",
@@ -159,30 +176,101 @@ const HomePage = () => {
             </Typography>
           </Box>
         </Box>
-        <Box
-          marginTop="50px"
-          width="800px"
-          display="flex"
-          flexDirection="column"
-          justifyContent="center"
+      </Box>
+      <Box
+        border="2px solid #bab3b3"
+        width="700px"
+        height="399px"
+        padding="20px"
+        marginLeft="60px"
+        display="flex"
+        flexDirection="column"
+        alignItems="center"
+        marginTop="25px"
+        borderRadius="4px"
         >
+          <Box>
+            <Typography
+            fontSize="24px"
+            fontWeight="550"
+            marginBottom="20px"
+            color="#33c0cb"
+            >Select a Brain</Typography>
+          <Box height="380px" justifyContent="center" alignItems="center" sx={{
+          overflowY:"auto",
+        }}>
+            {
+              mockData.map((mock)=>(
+                <Button key={mock.system.brain.mac} color="primary"
+                variant="contained"
+                sx={{
+                  backgroundColor: "#33c0cb",
+                  width: "150px",
+                  zIndex: "10",
+                  margin: "5px",
+                  "&:hover": {
+                    backgroundColor: "#186a70",
+                  },
+                }} onClick={() => handleSelectednodes(mock.system.brain.mac)}>
+                  {mock.system.brain.mac}
+                </Button>
+              ))
+            }
+            <Box display="flex" justifyContent="center">
+            <Dialog
+            maxWidth="100px"
+            sx={{
+              "& .MuiPaper-root": {
+                borderRadius: "10px",
+                background:
+                  "linear-gradient(to right, #07090c, #12161b, #1b2125, #242a33)",
+                border: "1px solid #33c0cb",
+              },
+            }}
+            open={openSelectNodes}
+            onClose={handleCloseSelectedNodes}
+            disableEscapeKeyDown={true}
+          >
+          <Box width="700px" maxHeight="auto">
+          <Typography
+            fontSize="24px"
+            fontWeight="550"
+            marginBottom="20px"
+            color="#33c0cb"
+            display="flex"
+            justifyContent="center"
+            >Select a Node</Typography>
+          <Box display="flex" justifyContent="center" flexWrap="wrap">
+            {selectedNodes.length > 0 ? (
+        selectedNodes.map((node) => (
           <Button
-            onClick={handleOpenQueryEditor}
+            key={node.mac}
+            onClick={() => handleOpenQueryForNodes(node)}
             color="primary"
             variant="contained"
             sx={{
               backgroundColor: "#33c0cb",
-              width: "300px",
+              width: "150px",
               zIndex: "10",
-              marginLeft: "85px",
+              margin: "5px",
               "&:hover": {
                 backgroundColor: "#186a70",
-                display: "flex",
               },
             }}
           >
-            <Typography fontWeight="550">Query Editor</Typography>
+            {node.mac}
           </Button>
+        ))
+      ) : (
+        <Typography color="gray">No nodes found for this brain MAC.</Typography>
+      )}
+          </Box>
+</Box>
+            <Box display="flex" justifyContent="flex-end" marginRight="5px" marginBottom="5px">
+              <Button onClick={handleCloseSelectedNodes} sx={{
+              }} > Close</Button>
+            </Box>
+          </Dialog>
           <Dialog
             maxWidth="100px"
             sx={{
@@ -193,87 +281,27 @@ const HomePage = () => {
                 border: "1px solid #33c0cb",
               },
             }}
-            open={openQueryEditor}
-            onClose={handleCloseQueryEditor}
+            open={openQueryEditorForNodes}
+            onClose={handleCloseQueryForNodes}
             disableEscapeKeyDown={true}
           >
-            <QueryEditor handleClose={handleCloseQueryEditor}/>
+            <QueryEditor handleClose={handleCloseQueryForNodes} selectedNode={selectedNode}/>
           </Dialog>
-          <Button
-            onClick={handleOpenDragAndDropEditor}
-            variant="contained"
-            sx={{
-              backgroundColor: "#33c0cb",
-              width: "300px",
-              marginTop: "25px",
-              marginLeft: "250px",
-              "&:hover": {
-                backgroundColor: "#186a70",
-              },
-            }}
-          >
-            <Typography fontWeight="550">Drag and Drop Editor</Typography>
-          </Button>
-          <Dialog
-            sx={{
-              "& .MuiPaper-root": {
-                borderRadius: "10px",
-                background:
-                  "linear-gradient(to right, #07090c, #12161b, #1b2125, #242a33)",
-                border: "1px solid #33c0cb",
-              },
-            }}
-            open={openDragAndDropEditor}
-            onClose={handleCloseDragAndDropEditor}
-            maxWidth="1300px"
-          >
-            <DragAndDropEditor handleClose={handleCloseDragAndDropEditor} />
-          </Dialog>
-          <Button
-            onClick={handleOpenFlowchartEditor}
-            variant="contained"
-            sx={{
-              backgroundColor: "#33c0cb",
-              width: "300px",
-              marginTop: "25px",
-              marginLeft: "410px",
-              "&:hover": {
-                backgroundColor: "#186a70",
-              },
-            }}
-          >
-            <Typography fontWeight="550">Flowchart Editor</Typography>
-          </Button>
-          <Dialog
-            maxWidth="lg"
-            sx={{
-              "& .MuiPaper-root": {
-                borderRadius: "10px",
-                background:
-                  "linear-gradient(to right, #07090c, #12161b, #1b2125, #242a33)",
-                border: "1px solid #33c0cb",
-              },
-            }}
-            open={openFlowchartEditor}
-            onClose={handleCloseFlowchartEditor}
-          >
-            <Box padding="20px" width="1000px" height="500px">
-              <FlowchartEditor handleClose={handleCloseFlowchartEditor} />
-            </Box>
-          </Dialog>
-        </Box>
+          </Box>
+          </Box>
+          </Box>
+      </Box>
       </Box>
       <Box
-        borderLeft="2px solid grey"
-        borderRight="2px solid grey"
+        border="2px solid #bab3b3"
         width="600px"
-        height="540px"
+        height="543px"
         padding="20px"
         marginLeft="30px"
         display="flex"
         flexDirection="column"
         alignItems="center"
-        
+        borderRadius="4px"
       >
         <Typography
           fontSize="24px"
