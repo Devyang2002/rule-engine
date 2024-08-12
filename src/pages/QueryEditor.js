@@ -340,13 +340,13 @@ const transformQueryToCustomJSON = (query, jsonRule, isAction = false,selectedNo
       if(selectedNode && selectedNode.capabilities) {
         return {
           id: rule.id,
-          field: selectedNode.capabilities[0].field,
+          field: selectedNode.capabilities.field,
           cap_index: fieldCapIndexMap[rule.field] || 0,
           operator: rule.operator,
           value: rule.value,
           channel: selectedNode.capabilities.channel  || "",
           mac: selectedNode.mac || "",
-          name: selectedNode.capabilities[0].name,
+          name: selectedNode.capabilities.name,
           parameter: field.parameter || "",
         };
       }
