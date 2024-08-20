@@ -13,8 +13,9 @@ import "react-querybuilder/dist/query-builder.css";
 import "react-querybuilder/dist/query-builder-layout.css";
 import "../styles/QueryEditor.css";
 import { toast } from "react-toastify";
+import mockdata from '../data/mock_data';
 
-const fields = [
+let fields = [
   {
     name: "temperature",
     label: "Temperature (°C)",
@@ -152,7 +153,19 @@ const fields = [
   },
 ];
 
-const CustomValueEditor = ({ field, operator, value, handleOnChange,selectedNode_capability }) => {
+const setupFields = (selectedNode) => {
+  fields.forEach((field) => {
+    field.mac = selectedNode.mac;
+  })
+}
+
+const CustomValueEditor = ({
+  field,
+  operator,
+  value,
+  handleOnChange,
+  selectedNode_capability,
+}) => {
   console.log("kjbdfjibf", selectedNode_capability, value);
   if (operator === "out of range" || operator === "in range") {
     return (
@@ -234,13 +247,12 @@ const CustomValueEditor = ({ field, operator, value, handleOnChange,selectedNode
   // }
 
   if (field === "battery_current") {
-    console.log(value);
-    
-    const selectedCapability = selectedNode_capability?.[0] || {}; // Get the first capability or an empty object
+
+    const selectedCapability = selectedNode_capability?.[0] || {};
 
     const initialValue = {
       current: value?.current || "",
-      channel: value?.channel || (selectedCapability?.channel || ""),
+      channel: value?.channel || selectedCapability?.channel || "",
     };
 
     return (
@@ -360,9 +372,12 @@ const CustomValueEditor = ({ field, operator, value, handleOnChange,selectedNode
   );
 };
 
-
-
-const transformQueryToCustomJSON = (query, jsonRule, isAction = false,selectedNode = null) => {
+const transformQueryToCustomJSON = (
+  query,
+  jsonRule,
+  isAction = false,
+  selectedNode = null
+) => {
   const fieldCapIndexMap = fields.reduce((acc, field, index) => {
     acc[field.name] = index;
     return acc;
@@ -387,19 +402,31 @@ const transformQueryToCustomJSON = (query, jsonRule, isAction = false,selectedNo
         console.error(`Field not found for rule field '${rule.field}'`, rule);
         throw new Error(`Field not found for rule field '${rule.field}'`);
       }
-      
-      if(selectedNode && selectedNode.capabilities) {
-        return {
-          id: rule.id,
-          field: selectedNode.capabilities.field,
-          cap_index: fieldCapIndexMap[rule.field] || 0,
-          operator: rule.operator,
-          value: rule.value,
-          channel: selectedNode.capabilities.channel  || "",
-          mac: selectedNode.mac || "",
-          name: selectedNode.capabilities.name,
-          parameter: field.parameter || "",
-        };
+
+      if (selectedNode && selectedNode.capabilities) {
+        return selectedNode.capabilities.length === 1
+          ? {
+              id: rule.id,
+              field: selectedNode.capabilities[0].field,
+              cap_index: fieldCapIndexMap[rule.field] || 0,
+              operator: rule.operator,
+              value: rule.value,
+              channel: selectedNode.capabilities[0].channel || rule.value.channel,
+              mac: selectedNode.mac || "",
+              name: selectedNode.capabilities[0].name,
+              parameter: field.parameter || "",
+            }
+          : {
+              id: rule.id,
+              field: selectedNode.capabilities.field,
+              cap_index: fieldCapIndexMap[rule.field] || 0,
+              operator: rule.operator,
+              value: rule.value,
+              channel: selectedNode.capabilities.channel || "",
+              mac: selectedNode.mac || "",
+              name: selectedNode.capabilities.name,
+              parameter: field.parameter || "",
+            };
       }
 
       return {
@@ -408,9 +435,9 @@ const transformQueryToCustomJSON = (query, jsonRule, isAction = false,selectedNo
         cap_index: fieldCapIndexMap[rule.field] || 0,
         operator: rule.operator,
         value: rule.value,
-        mac: field.mac || "",
+        mac: field.mac,
         parameter: field.parameter || "",
-        channel: field.channel || "",
+        channel: rule.channel,
       };
     }
   };
@@ -423,40 +450,79 @@ const transformQueryToCustomJSON = (query, jsonRule, isAction = false,selectedNo
   };
 };
 
-const QueryEditor = ({ handleClose, jsonRule, saveQuery,selectedNode }) => {
+// const QueryEditor = ({ handleClose, jsonRule, saveQuery, selectedNode }) => {
+  
+//   let rulesActionsJson = {};
+//   if (jsonRule) {
+//     rulesActionsJson = JSON.parse(jsonRule);
+//   }
+  
+//   if (selectedNode) {
+//     setupFields(selectedNode);
+//   }
+//   else {
+//     selectedNode = mockdata.find(mock => mock.system.brain.nodes.mac === rulesActionsJson.rules.rules.mac);
+//   }
+//   const [query, setQuery] = useState({
+//     combinator: "and",
+//     rules:
+//       rulesActionsJson && rulesActionsJson.rules && rulesActionsJson.rules.rules
+//         ? rulesActionsJson.rules.rules
+//         : selectedNode.capabilities || [],
+//   });
+const QueryEditor = ({ handleClose, jsonRule, saveQuery, selectedNode }) => {
   let rulesActionsJson = {};
   if (jsonRule) {
     rulesActionsJson = JSON.parse(jsonRule);
   }
 
+  // Add null check for rulesActionsJson and its nested properties
+  const parsedRules =
+    rulesActionsJson?.rules?.rules || []; // Fallback to an empty array if undefined
+
+  if (selectedNode) {
+    setupFields(selectedNode);
+  } else {
+    selectedNode = mockdata.find(
+      (mock) => mock.system.brain.nodes.mac === parsedRules.mac
+    );
+  }
+
   const [query, setQuery] = useState({
     combinator: "and",
-    rules:
-    rulesActionsJson && rulesActionsJson.rules && rulesActionsJson.rules.rules
-    ? rulesActionsJson.rules.rules
-    : selectedNode.capabilities,
+    rules: parsedRules.length > 0
+      ? parsedRules
+      : selectedNode?.capabilities || [], // Fallback to empty array or selectedNode.capabilities if parsedRules is empty
   });
 
   const [actionQuery, setActionQuery] = useState({
     combinator: "and",
     rules:
-    rulesActionsJson &&
-    rulesActionsJson.actions &&
-    rulesActionsJson.actions.rules
-    ? rulesActionsJson.actions.rules
-    : [],
+      rulesActionsJson &&
+      rulesActionsJson.actions &&
+      rulesActionsJson.actions.rules
+        ? rulesActionsJson.actions.rules
+        : [],
   });
   const [formattedQuery, setFormattedQuery] = useState("");
   const [formattedActionQuery, setFormattedActionQuery] = useState("");
   const [action, setAction] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [previousQuery, setPreviousQuery] = useState(transformQueryToCustomJSON(query));
-  const [previousActionQuery, setPreviousActionQuery] = useState(transformQueryToCustomJSON(actionQuery, true));
-  
+  const [previousQuery, setPreviousQuery] = useState(
+    transformQueryToCustomJSON(query)
+  );
+  const [previousActionQuery, setPreviousActionQuery] = useState(
+    transformQueryToCustomJSON(actionQuery, true)
+  );
 
   const handleQueryChange = (newQuery) => {
     setQuery(newQuery);
-    const transformedQuery = transformQueryToCustomJSON(newQuery, jsonRule,false,selectedNode);
+    const transformedQuery = transformQueryToCustomJSON(
+      newQuery,
+      jsonRule,
+      false,
+      selectedNode
+    );
     setFormattedQuery(JSON.stringify(transformedQuery, null, 2));
   };
 
@@ -466,7 +532,7 @@ const QueryEditor = ({ handleClose, jsonRule, saveQuery,selectedNode }) => {
       const transformedActionQuery = transformQueryToCustomJSON(
         newQuery,
         jsonRule,
-        true,
+        true
       );
       setFormattedActionQuery(JSON.stringify(transformedActionQuery, null, 2));
     }
@@ -552,23 +618,28 @@ const QueryEditor = ({ handleClose, jsonRule, saveQuery,selectedNode }) => {
       }
     }
   };
-  
-
 
   const handleSaveQuery = async () => {
+    selectedNode = null;
     const hasValidAction = actionQuery.rules.some((rule) => {
       if (Array.isArray(rule.value)) {
         return rule.value.some((val) => val !== "");
       }
       return rule.value !== "";
     });
-  
-    const transformedQuery = transformQueryToCustomJSON(query);
-    const transformedActionQuery = transformQueryToCustomJSON(actionQuery, true);
 
-    const rulesChanged = JSON.stringify(transformedQuery) !== JSON.stringify(previousQuery);
-    const actionsChanged = JSON.stringify(transformedActionQuery) !== JSON.stringify(previousActionQuery);
-  
+    const transformedQuery = transformQueryToCustomJSON(query);
+    const transformedActionQuery = transformQueryToCustomJSON(
+      actionQuery,
+      true
+    );
+
+    const rulesChanged =
+      JSON.stringify(transformedQuery) !== JSON.stringify(previousQuery);
+    const actionsChanged =
+      JSON.stringify(transformedActionQuery) !==
+      JSON.stringify(previousActionQuery);
+
     if (!rulesChanged && !actionsChanged) {
       toast("Please change at least one rule or action", {
         style: {
@@ -578,7 +649,7 @@ const QueryEditor = ({ handleClose, jsonRule, saveQuery,selectedNode }) => {
       });
       return;
     }
-  
+
     if (!hasValidAction) {
       toast("Please ensure all actions have a value entered", {
         style: {
@@ -588,22 +659,22 @@ const QueryEditor = ({ handleClose, jsonRule, saveQuery,selectedNode }) => {
       });
       return;
     }
-  
+
     const combinedQueries = {
       rules: transformedQuery,
       actions: transformedActionQuery,
     };
-  
+
     const userId = sessionStorage.getItem("user_id");
     await saveQuery(JSON.stringify(combinedQueries, null, 2));
-  
+
     toast("Query updated successfully", {
       style: {
         backgroundColor: "#07090c",
         color: "white",
       },
     });
-  
+
     setPreviousQuery(transformedQuery);
     setPreviousActionQuery(transformedActionQuery);
   };
@@ -644,9 +715,13 @@ const QueryEditor = ({ handleClose, jsonRule, saveQuery,selectedNode }) => {
   };
 
   const CustomValueEditorWrapper = (props) => {
-    return <CustomValueEditor {...props} selectedNode_capability={selectedNode && selectedNode.capabilities} />;
+    return (
+      <CustomValueEditor
+        {...props}
+        selectedNode_capability={selectedNode && selectedNode.capabilities}
+      />
+    );
   };
-  
 
   return (
     <Paper
