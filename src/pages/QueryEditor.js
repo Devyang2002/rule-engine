@@ -153,8 +153,7 @@ const fields = [
 ];
 
 const CustomValueEditor = ({ field, operator, value, handleOnChange,selectedNode_capability }) => {
-
-  console.log("kjbdfjibf", selectedNode_capability);
+  console.log("kjbdfjibf", selectedNode_capability, value);
   if (operator === "out of range" || operator === "in range") {
     return (
       <div style={{ display: "flex", gap: "8px" }}>
@@ -186,10 +185,62 @@ const CustomValueEditor = ({ field, operator, value, handleOnChange,selectedNode
     );
   }
 
+  // if (field === "battery_current") {
+  //   console.log(value);
+  //   const initialValue = {
+  //     current: value?.current || "",
+  //     channel: value?.channel || selectedNode_capability[0].channel || "",
+  //   };
+
+  //   return (
+  //     <div style={{ display: "flex", gap: "8px" }}>
+  //       <input
+  //         type="number"
+  //         value={initialValue.current}
+  //         onChange={(e) => {
+  //           const newValue = { ...value, current: e.target.value };
+  //           handleOnChange(newValue);
+  //         }}
+  //         placeholder="Current Value"
+  //         style={{
+  //           backgroundColor: "#292929",
+  //           color: "white",
+  //           borderRadius: "4px",
+  //           borderColor: "#292929",
+  //         }}
+  //       />
+  //       <select
+  //         value={initialValue.channel}
+  //         onChange={(e) => {
+  //           const newValue = { ...value, channel: e.target.value };
+  //           handleOnChange(newValue);
+  //         }}
+  //         style={{
+  //           backgroundColor: "#292929",
+  //           color: "white",
+  //           borderRadius: "4px",
+  //           borderColor: "#292929",
+  //         }}
+  //       >
+  //         <option value="">Channel</option>
+  //         <option value="1">1</option>
+  //         <option value="2">2</option>
+  //         <option value="3">3</option>
+  //         <option value="4">4</option>
+  //         <option value="5">5</option>
+  //       </select>
+  //     </div>
+  //   );
+  // }
+
   if (field === "battery_current") {
+    console.log(value);
+    
+    const selectedCapability = selectedNode_capability?.[0] || {}; // Get the first capability or an empty object
+
     const initialValue = {
       current: value?.current || "",
-      channel: value?.channel || selectedNode_capability[0].channel || "",
+      channel: value?.channel || (selectedCapability?.channel || ""),
     };
 
     return (
@@ -593,7 +644,7 @@ const QueryEditor = ({ handleClose, jsonRule, saveQuery,selectedNode }) => {
   };
 
   const CustomValueEditorWrapper = (props) => {
-    return <CustomValueEditor {...props} selectedNode_capability={selectedNode.capabilities} />;
+    return <CustomValueEditor {...props} selectedNode_capability={selectedNode && selectedNode.capabilities} />;
   };
   
 
