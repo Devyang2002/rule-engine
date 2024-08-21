@@ -13,7 +13,7 @@ import "react-querybuilder/dist/query-builder.css";
 import "react-querybuilder/dist/query-builder-layout.css";
 import "../styles/QueryEditor.css";
 import { toast } from "react-toastify";
-import mockdata from '../data/mock_data';
+import mockdata from "../data/mock_data";
 
 let fields = [
   {
@@ -156,8 +156,8 @@ let fields = [
 const setupFields = (selectedNode) => {
   fields.forEach((field) => {
     field.mac = selectedNode.mac;
-  })
-}
+  });
+};
 
 const CustomValueEditor = ({
   field,
@@ -198,56 +198,7 @@ const CustomValueEditor = ({
     );
   }
 
-  // if (field === "battery_current") {
-  //   console.log(value);
-  //   const initialValue = {
-  //     current: value?.current || "",
-  //     channel: value?.channel || selectedNode_capability[0].channel || "",
-  //   };
-
-  //   return (
-  //     <div style={{ display: "flex", gap: "8px" }}>
-  //       <input
-  //         type="number"
-  //         value={initialValue.current}
-  //         onChange={(e) => {
-  //           const newValue = { ...value, current: e.target.value };
-  //           handleOnChange(newValue);
-  //         }}
-  //         placeholder="Current Value"
-  //         style={{
-  //           backgroundColor: "#292929",
-  //           color: "white",
-  //           borderRadius: "4px",
-  //           borderColor: "#292929",
-  //         }}
-  //       />
-  //       <select
-  //         value={initialValue.channel}
-  //         onChange={(e) => {
-  //           const newValue = { ...value, channel: e.target.value };
-  //           handleOnChange(newValue);
-  //         }}
-  //         style={{
-  //           backgroundColor: "#292929",
-  //           color: "white",
-  //           borderRadius: "4px",
-  //           borderColor: "#292929",
-  //         }}
-  //       >
-  //         <option value="">Channel</option>
-  //         <option value="1">1</option>
-  //         <option value="2">2</option>
-  //         <option value="3">3</option>
-  //         <option value="4">4</option>
-  //         <option value="5">5</option>
-  //       </select>
-  //     </div>
-  //   );
-  // }
-
   if (field === "battery_current") {
-
     const selectedCapability = selectedNode_capability?.[0] || {};
 
     const initialValue = {
@@ -411,7 +362,14 @@ const transformQueryToCustomJSON = (
               cap_index: fieldCapIndexMap[rule.field] || 0,
               operator: rule.operator,
               value: rule.value,
-              channel: selectedNode.capabilities[0].channel || rule.value.channel,
+              channel:
+                selectedNode.capabilities &&
+                selectedNode.capabilities[0] &&
+                selectedNode.capabilities[0].channel
+                  ? selectedNode.capabilities[0].channel
+                  : rule.value && rule.value.channel
+                  ? rule.value.channel
+                  : null,
               mac: selectedNode.mac || "",
               name: selectedNode.capabilities[0].name,
               parameter: field.parameter || "",
@@ -450,35 +408,13 @@ const transformQueryToCustomJSON = (
   };
 };
 
-// const QueryEditor = ({ handleClose, jsonRule, saveQuery, selectedNode }) => {
-  
-//   let rulesActionsJson = {};
-//   if (jsonRule) {
-//     rulesActionsJson = JSON.parse(jsonRule);
-//   }
-  
-//   if (selectedNode) {
-//     setupFields(selectedNode);
-//   }
-//   else {
-//     selectedNode = mockdata.find(mock => mock.system.brain.nodes.mac === rulesActionsJson.rules.rules.mac);
-//   }
-//   const [query, setQuery] = useState({
-//     combinator: "and",
-//     rules:
-//       rulesActionsJson && rulesActionsJson.rules && rulesActionsJson.rules.rules
-//         ? rulesActionsJson.rules.rules
-//         : selectedNode.capabilities || [],
-//   });
 const QueryEditor = ({ handleClose, jsonRule, saveQuery, selectedNode }) => {
   let rulesActionsJson = {};
   if (jsonRule) {
     rulesActionsJson = JSON.parse(jsonRule);
   }
 
-  // Add null check for rulesActionsJson and its nested properties
-  const parsedRules =
-    rulesActionsJson?.rules?.rules || []; // Fallback to an empty array if undefined
+  const parsedRules = rulesActionsJson?.rules?.rules || [];
 
   if (selectedNode) {
     setupFields(selectedNode);
@@ -490,9 +426,8 @@ const QueryEditor = ({ handleClose, jsonRule, saveQuery, selectedNode }) => {
 
   const [query, setQuery] = useState({
     combinator: "and",
-    rules: parsedRules.length > 0
-      ? parsedRules
-      : selectedNode?.capabilities || [], // Fallback to empty array or selectedNode.capabilities if parsedRules is empty
+    rules:
+      parsedRules.length > 0 ? parsedRules : selectedNode?.capabilities || [],
   });
 
   const [actionQuery, setActionQuery] = useState({
